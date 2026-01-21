@@ -25,9 +25,14 @@ int main() {
     
     if (stan->bilety_dostepne[sektor] > 0) {
         stan->bilety_dostepne[sektor]--;
-        printf("[KIBIC %d] KUPIŁEM bilet! (Zostało: %d)\n", getpid(), stan->bilety_dostepne[sektor]);
+        
+        printf("[KIBIC %d] KUPIŁEM bilet do sektora %d! (Zostało: %d)\n", 
+               getpid(), sektor, stan->bilety_dostepne[sektor]);
+
     } else {
-        printf("[KIBIC %d] Brak biletów! Wychodzę.\n", getpid());
+        // Tu też warto dodać informację o sektorze:
+        printf("[KIBIC %d] Brak biletów do sektora %d! Wychodzę.\n", getpid(), sektor);
+        
         sem_unlock(sem_id, SEM_MUTEX_MAIN);
         shmdt(stan);
         exit(0);
