@@ -2,7 +2,8 @@ CC = gcc
 CFLAGS = -Wall -g -I./common/
 HEADER = common/shared.h
 
-all: kierownik kasjer ochrona kibic
+# Dodaj kierowniktest do listy all
+all: kierownik kasjer ochrona kibic kierowniktest
 
 kierownik: kierownik.c $(HEADER)
 	$(CC) $(CFLAGS) kierownik.c -o kierownik
@@ -16,6 +17,10 @@ ochrona: ochrona.c $(HEADER)
 kibic: kibic.c $(HEADER)
 	$(CC) $(CFLAGS) kibic.c -o kibic
 
+# --- TESTY KIEROWNIKA ---
+kierowniktest: kierowniktest.c $(HEADER)
+	$(CC) $(CFLAGS) kierowniktest.c -o kierowniktest
+
 clean:
-	rm -f kierownik kasjer ochrona kibic magazyn.dat raport_symulacji.txt
+	rm -f kierownik kasjer ochrona kibic kierowniktest magazyn.dat raport_symulacji.txt
 	rm -rf *.dSYM
