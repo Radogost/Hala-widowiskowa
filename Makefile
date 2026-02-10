@@ -24,4 +24,8 @@ clean:
 	rm -f *.o $(TARGETS)
 
 ipc-clean:
-	ipcrm -a
+	@echo "[CLEAN] Usuwanie pamięci dzielonej..."
+	-ipcs -m | grep `whoami` | awk '{print $$2}' | xargs -n1 ipcrm -m
+	@echo "[CLEAN] Usuwanie semaforów..."
+	-ipcs -s | grep `whoami` | awk '{print $$2}' | xargs -n1 ipcrm -s
+	@echo "[CLEAN] Gotowe."
