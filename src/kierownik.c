@@ -31,25 +31,42 @@ void handle_sigint(int sig) {
 void run_fan_generator(int K) {
     if (fork() == 0) {
         srand(getpid());
-        int total_fans = K + (int)(K * 0.05); 
+        // Generujemy 20% więcej ludzi niż miejsc, żeby zapewnić kolejkę
+        int total_fans = K + (int)(K * 0.2); 
         
-        int rush_mode = 0;
-        int counter = 0;
+        // printf("[Generator] Start! %d kibiców rusza na mecz (Próg kas: %d).\n", total_fans, K/10);
 
         for (int i = 0; i < total_fans; i++) {
+            
+            // --- DUŻY AUTOBUS (Żeby przebić próg K/10) ---
+            // 5% szans na przyjazd dużej zorganizowanej grupy
+            if (rand() % 100 < 5) {
+                // Autobus musi być WIĘKSZY niż K/10, żeby otworzyć 3. kasę.
+                // Ustawiamy go losowo na 12% - 18% pojemności hali.
+                int bus_size = (K * 0.12) + (rand() % (int)(K * 0.06));
+                
+                // Wpuszczamy ich serią (bez sleepa - nagły skok kolejki)
+                for (int b = 0; b < bus_size && i < total_fans; b++) {
+                    if (fork() == 0) {
+                        execl("./kibic", "./kibic", NULL);
+                        exit(1);
+                    }
+                    i++; 
+                }
+                // Po takiej fali chwila przerwy (kierowca pije kawę)
+                usleep(800000); 
+                continue; 
+            }
+            // ---------------------------------------------
+
+            // Pojedynczy kibic (pieszy)
             if (fork() == 0) {
                 execl("./kibic", "./kibic", NULL);
                 exit(1);
             }
 
-            counter++;
-            if (counter > 30 && (rand() % 100 < 15)) { 
-                rush_mode = !rush_mode;
-                counter = 0;
-            }
-
-            if (rush_mode) usleep(2000 + (rand() % 4000)); 
-            else usleep(200000 + (rand() % 300000)); 
+            // Standardowy losowy odstęp między pieszymi
+            usleep(50000 + (rand() % 150000)); 
         }
         exit(0);
     }
