@@ -21,12 +21,17 @@ int main() {
     int is_vip = (rand() % 1000) < 3; // 0.3% szans
     int my_ticket_sector = -1;
     int my_team = (rand() % 2) + 1; // 1 lub 2
+    char log_buf[100];
 
 // 1. ZAKUP BILETU (tylko non-VIP)
     if (!is_vip) {
         semop(semid, &lock, 1);
         hala->queue_to_cashiers++;
         semop(semid, &unlock, 1);
+
+        // Logowanie stania w kolejce
+        sprintf(log_buf, "PID %d: Staje w kolejce do kasy", getpid());
+        log_event("KIBIC", log_buf);
 
         // Symulacja stania w kolejce
         int has_ticket = 0;
@@ -56,6 +61,11 @@ int main() {
                     hala->tickets_sold[my_ticket_sector]++;
                     hala->queue_to_cashiers--;
                     has_ticket = 1;
+
+                    // Logowanie zakupu biletu
+                    sprintf(log_buf, "PID %d: Kupil bilet na Sektor %d (Druzyna %d)", getpid(), my_ticket_sector+1, my_team);
+                    log_event("KIBIC", log_buf);
+
                 } else {
                     // Brak miejsc - nic nie robimy, pętla leci dalej
                 }
@@ -111,6 +121,10 @@ int main() {
                 if (hala->people_in_sector[my_ticket_sector] < hala->sector_capacity) {
                     hala->people_in_sector[my_ticket_sector]++;
                     gate_passed = 1;
+
+                    // Logowanie przejścia przez bramkę
+                    sprintf(log_buf, "PID %d: Przeszedł kontrole -> Sektor %d", getpid(), my_ticket_sector+1);
+                    log_event("KIBIC", log_buf);
                 }
                 break; // Wychodzimy z pętli for szukania stanowiska
             }
@@ -132,6 +146,10 @@ int main() {
     if(my_ticket_sector != -1 && hala->people_in_sector[my_ticket_sector] > 0)
         hala->people_in_sector[my_ticket_sector]--;
     semop(semid, &unlock, 1);
+
+    // Logowanie ewakuacji
+    sprintf(log_buf, "PID %d: Ewakuowany ze stadionu", getpid());
+    log_event("KIBIC", log_buf);
 
     return 0;
 }
