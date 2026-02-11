@@ -2,6 +2,7 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <unistd.h>
+#include <stdio.h>
 #include "common/shared.h"
 
 int main(int argc, char *argv[]) {
@@ -16,6 +17,10 @@ int main(int argc, char *argv[]) {
     
     struct sembuf lock = {0, -1, 0};
     struct sembuf unlock = {0, 1, 0};
+
+    // Logika kasjera: dynamiczne otwieranie/zamykanie kas w zależności od kolejki
+    char log_buf[100];
+    int was_active = 0;
 
     while(1) {
         // ZMIANA: Zamiast sleep(1), sprawdzamy częściej (co 0.2s)
@@ -40,26 +45,33 @@ int main(int argc, char *argv[]) {
         // Aktualizujemy globalną informację dla Kibiców
         hala->active_cashiers_count = needed_cashiers;
 
-        // --- DECYZJA KASJERA O PRACY ---
-        // Każdy kasjer ma swoje ID (np. 0, 1, 2...).
-        // Jeśli jest potrzebnych 3 kasjerów, to pracują ID: 0, 1, 2.
-        // Kasjerzy o ID 3, 4, 5... idą spać.
-        
-        if (id >= needed_cashiers) {
-            // Jestem niepotrzebny -> zamykam swoje okienko
+        // Sprawdzamy, czy ten konkretny kasjer powinien pracować
+        int am_active = (id < needed_cashiers);
+
+        // --- SEKCJA LOGOWANIA (TYLKO PRZY ZMIANIE STANU) ---
+        if (am_active && !was_active) {
+            // Byłem zamknięty, teraz się otwieram
+            sprintf(log_buf, "Kasa %d: OTWIERA SIĘ (Kolejka: %d os.)", id+1, hala->queue_to_cashiers);
+            log_event("KASJER", log_buf);
+        }
+        else if (!am_active && was_active) {
+            // Byłem otwarty, teraz się zamykam
+            sprintf(log_buf, "Kasa %d: ZAMYKA SIĘ (Spadek kolejki)", id+1);
+            log_event("KASJER", log_buf);
+        }
+        was_active = am_active; // Zapamiętaj stan na następną pętlę
+        // ---------------------------------------------------
+
+        // Decyzja o spaniu
+        if (!am_active) {
+            // Jestem niepotrzebny -> zamykam swoje okienko (zwalniam semafor)
             semop(semid, &unlock, 1);
             
-            // Śpię dłużej, żeby nie męczyć semafora (jestem w rezerwie)
-            sleep(1); 
+            sleep(1); // Śpię dłużej
             continue;
         }
 
-        // --- PRACA KASJERA ---
-        // Jestem potrzebny! 
-        // W tym modelu (procesowym) kasjer głównie "udostępnia" slot.
-        // Faktyczna "sprzedaż" dzieje się w procesie Kibica, który zmniejsza kolejkę.
-        // Ale dla realizmu możemy tu "pomrugać" w logach albo po prostu zwolnić semafor.
-        
+        // Jestem potrzebny (udostępniam slot)
         semop(semid, &unlock, 1);
     }
     return 0;
