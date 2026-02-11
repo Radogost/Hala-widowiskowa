@@ -179,7 +179,6 @@ int main(int argc, char *argv[]) {
                     scanf("%d", &s);
                     if(s>=1 && s<=8) {
                         hala->sector_signal_status[s-1] = 1;
-                        log_event("KIEROWNIK", "Wysłano sygnał 1 (Stop)");
 
                         // Logowanie decyzji manualnej
                         char buf[100];
@@ -193,7 +192,6 @@ int main(int argc, char *argv[]) {
                     scanf("%d", &s);
                     if(s>=1 && s<=8) {
                         hala->sector_signal_status[s-1] = 0;
-                        log_event("KIEROWNIK", "Wysłano sygnał 2 (Start)");
 
                         // Logowanie decyzji manualnej
                         char buf[100];
@@ -202,12 +200,16 @@ int main(int argc, char *argv[]) {
                     }
                 }
                 else if (cmd == 3) { 
-                    hala->evacuation_mode = 1;
-                    log_event("KIEROWNIK", "EWAKUACJA! Sygnał 3");
+                    hala->evacuation_mode = 1;                   
+
+                    // Logowanie decyzji manualnej
+                    log_event("KIEROWNIK", "!!! URUCHOMIONO PROCEDURE EWAKUACJI !!!");
                 }
                 else if (cmd == 4) {
                     hala->is_match_started = 1;
-                    log_event("KIEROWNIK", "Start meczu (Tp)");
+                    
+                    // Logowanie decyzji manualnej
+                    log_event("KIEROWNIK", "Rozpoczecie meczu (Tp)");
                 }
                 else if (cmd == 5) {
                     semop(semid, &unlock, 1);
