@@ -180,6 +180,11 @@ int main(int argc, char *argv[]) {
                     if(s>=1 && s<=8) {
                         hala->sector_signal_status[s-1] = 1;
                         log_event("KIEROWNIK", "Wysłano sygnał 1 (Stop)");
+
+                        // Logowanie decyzji manualnej
+                        char buf[100];
+                        sprintf(buf, "Zablokowano wejscie na Sektor %d (Decyzja manualna)", s);
+                        log_event("KIEROWNIK", buf);
                     }
                 }
                 else if (cmd == 2) { 
@@ -189,6 +194,11 @@ int main(int argc, char *argv[]) {
                     if(s>=1 && s<=8) {
                         hala->sector_signal_status[s-1] = 0;
                         log_event("KIEROWNIK", "Wysłano sygnał 2 (Start)");
+
+                        // Logowanie decyzji manualnej
+                        char buf[100];
+                        sprintf(buf, "Odblokowano wejscie na Sektor %d", s);
+                        log_event("KIEROWNIK", buf);
                     }
                 }
                 else if (cmd == 3) { 
