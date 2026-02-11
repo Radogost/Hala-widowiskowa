@@ -48,6 +48,14 @@ int main(int argc, char *argv[]) {
 
     srand(time(NULL));
 
+    // --- NOWE: CZYSZCZENIE RAPORTU ---
+    FILE *f = fopen("raport_symulacji.txt", "w");
+    if (f) {
+        fprintf(f, "--- START NOWEJ SYMULACJI ---\n");
+        fclose(f);
+    }
+    // ---------------------------------
+
     // --- INICJALIZACJA IPC (Zgodna z shared.h) ---
     // Używamy funkcji pomocniczych z Twojego shared.h
     key_t key_shm = get_shm_key(FTOK_PATH, SHM_ID);
