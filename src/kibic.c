@@ -3,6 +3,7 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <time.h>
 
 struct sembuf lock = {0, -1, 0};
