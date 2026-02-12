@@ -21,6 +21,14 @@ kibic: kibic.c $(HEADER)
 kierowniktest: kierowniktest.c $(HEADER)
 	$(CC) $(CFLAGS) kierowniktest.c -o kierowniktest
 
+# --- DOKUMENTACJA ---
+docs:
+	@echo "Generowanie dokumentacji Doxygen..."
+	@doxygen Doxyfile
+	@echo "Dokumentacja gotowa w folderze docs/html/index.html"
+
+# --- CZYSZCZENIE ---
 clean:
+	rm -rf docs/
 	rm -f kierownik kasjer ochrona kibic kierowniktest raport_symulacji.txt
 	rm -rf *.dSYM
