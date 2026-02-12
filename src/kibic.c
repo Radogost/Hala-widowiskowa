@@ -30,6 +30,7 @@ int main() {
     int gate_passed = 0;
     int escaped_from_queue = 0;
     int has_ticket = 0;
+    int patience_lost_count = 0;
 
     // 1. ZAKUP BILETU
     if (!is_vip) {
@@ -82,7 +83,8 @@ int main() {
                     hala->queue_to_cashiers--;
                     has_ticket = 1;
 
-                    sprintf(log_buf, "PID %d: Kupil [%d BILET(Y)] na Sektor %d", getpid(), tickets_owned, my_ticket_sector+1);
+                    sprintf(log_buf, "PID %d: Kupil [%d BILET(Y)] na Sektor %d (Druzyna %d)", 
+                            getpid(), tickets_owned, my_ticket_sector+1, my_team);
                     log_event("KIBIC", log_buf);
                 }
             }
@@ -108,6 +110,8 @@ int main() {
             sleep(1); continue;
         }
 
+        int entered_gate = 0; // 1. Flaga pomocnicza: czy udało się wejść w tej rundzie?
+
         for(int i=0; i<SECURITY_PER_GATE; i++) {
             SecurityPost *post = &hala->security[my_ticket_sector][i];
             
@@ -118,6 +122,8 @@ int main() {
             if (can_enter) {
                 post->occupied_count++;
                 post->team_id = my_team;
+                entered_gate = 1; // 2. Oznaczamy sukces
+                
                 semop(semid, &unlock, 1);
                 
                 usleep(200000); 
@@ -135,6 +141,23 @@ int main() {
                 break; 
             }
         }
+
+        // 3. LOGIKA AGRESJI
+        // Sprawdzamy to PO pętli for, ale PRZED odblokowaniem semafora (unlock)
+        if (!entered_gate) {
+            patience_lost_count++;
+            if (patience_lost_count > 5) {
+                sprintf(log_buf, "PID %d: AGRESYWNE ZACHOWANIE! Czeka zbyt dlugo (%d raz)", getpid(), patience_lost_count);
+                log_event("AGRESJA", log_buf);
+                
+                // Opcjonalnie: krótki sleep, żeby agresywny kibic "pychał się" szybciej
+                semop(semid, &unlock, 1);
+                usleep(10000); 
+                continue; 
+            }
+        }
+        // -------------------------
+
         semop(semid, &unlock, 1);
         if(!gate_passed) usleep(50000); 
     }

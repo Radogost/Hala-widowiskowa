@@ -40,7 +40,7 @@ void run_fan_generator(int K) {
             
             // --- DUŻY AUTOBUS (Żeby przebić próg K/10) ---
             // 5% szans na przyjazd dużej zorganizowanej grupy
-            if (rand() % 100 < 5) {
+            if (rand() % 100 < 2) {
                 // Autobus musi być WIĘKSZY niż K/10, żeby otworzyć 3. kasę.
                 // Ustawiamy go losowo na 12% - 18% pojemności hali.
                 int bus_size = (K * 0.12) + (rand() % (int)(K * 0.06));
