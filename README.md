@@ -11,20 +11,20 @@ Implementacja symulacji procesów w obiekcie sportowym, koncentrująca się na *
 ```bash
 make
 ```
-2. Czyszczenie (make clean)
+2. Czyszczenie (make clean)<br>
 Aby usunąć pliki wykonywalne i stary raport (zalecane przed ponowną kompilacją):
 
 ```bash
 make clean
 ```
 
-3. Uruchomienie Automatyczne Scenariusze (Zalecane)
+3. Uruchomienie Automatyczne Scenariusze (Zalecane)<br>
 Najlepszy sposób na prezentację projektu (wybierz test 1, 2 lub 3):
 
 ```bash
 ./testy.sh
 ```
-4. Uruchomienie Fizyczne Tryb Ręczny
+4. Uruchomienie Fizyczne Tryb Ręczny<br>
 Uruchomienie głównego zarządcy z możliwością interakcji klawiaturą:
 
 ```bash
