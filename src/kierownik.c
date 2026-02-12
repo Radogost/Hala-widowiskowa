@@ -97,6 +97,13 @@ void draw_ui() {
 }
 
 int main(int argc, char *argv[]) {
+    // --- NOWE: CZYSZCZENIE RAPORTU ---
+    FILE *f = fopen("raport_symulacji.txt", "w");
+    if (f) {
+        fprintf(f, "--- START NOWEJ SYMULACJI ---\n");
+        fclose(f);
+    }
+
     signal(SIGINT, handle_sigint);
 
     // Pobranie danych startowych (bez czyszczenia ekranu, zwykły input)
@@ -166,7 +173,7 @@ int main(int argc, char *argv[]) {
         
         // Czekaj na input przez 2000ms (2 sekundy)
         // Jeśli wpiszesz coś w tym czasie, poll zwróci > 0
-        int ret = poll(&fds, 1, 2000);
+        int ret = poll(&fds, 1, 1000);
 
         if (ret > 0) {
             // Użytkownik coś wpisał! Odczytaj to.

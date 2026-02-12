@@ -22,5 +22,5 @@ kierowniktest: kierowniktest.c $(HEADER)
 	$(CC) $(CFLAGS) kierowniktest.c -o kierowniktest
 
 clean:
-	rm -f kierownik kasjer ochrona kibic kierowniktest magazyn.dat raport_symulacji.txt
+	rm -f kierownik kasjer ochrona kibic kierowniktest raport_symulacji.txt
 	rm -rf *.dSYM
