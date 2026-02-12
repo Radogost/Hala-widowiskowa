@@ -4,6 +4,34 @@
 
 Implementacja symulacji procesów w obiekcie sportowym, koncentrująca się na **zarządzaniu tłumem**, współbieżnym dostępie do zasobów (miejsca na sektorach) oraz dynamicznym skalowaniu obsługi (kasy biletowe). Projekt wykorzystuje mechanizmy IPC: **Pamięć Dzieloną** oraz **Semafory**.
 
+## 🛠️ Kompilacja i Uruchomienie
+
+1. Aby skompilować projekt, upewnij się, że znajdujesz się w katalogu głównym projektu i wpisz w terminalu:
+
+```bash
+make
+```
+2. Czyszczenie (make clean)
+Aby usunąć pliki wykonywalne i stary raport (zalecane przed ponowną kompilacją):
+
+```bash
+make clean
+```
+
+3. Uruchamianie
+A. Automatyczne Scenariusze (Zalecane)
+Najlepszy sposób na prezentację projektu (wybierz test 1, 2 lub 3):
+
+```bash
+./testy.sh
+```
+B. Tryb Ręczny
+Uruchomienie głównego zarządcy z możliwością interakcji klawiaturą:
+
+```bash
+./kierownik
+```
+
 ## ⚙️ Opis Procesu
 
 System symuluje pełną ścieżkę kibica – od przybycia pod stadion, przez zakup biletu, kontrolę bezpieczeństwa, aż po udział w wydarzeniu i ewakuację.
