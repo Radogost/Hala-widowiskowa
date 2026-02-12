@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -g -I./common/
 HEADER = common/shared.h
 
-# Dodaj kierowniktest do listy all
+# Dodawanie kierowniktest do listy all
 all: kierownik kasjer ochrona kibic kierowniktest
 
 kierownik: kierownik.c $(HEADER)
