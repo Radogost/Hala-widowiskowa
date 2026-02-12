@@ -109,8 +109,15 @@ int main(int argc, char *argv[]) {
     // Pobranie danych startowych (bez czyszczenia ekranu, zwykły input)
     int K = 0;
     printf("Podaj pojemność hali K: ");
-    if (scanf("%d", &K) != 1) K = 100;
-    if (K < 8) K = 80;
+    if (scanf("%d", &K) != 1) {
+        printf("Błędne dane! Ustawiam domyślną pojemność K=100.\n"); // <-- Tego brakuje
+        K = 100;
+        while(getchar() != '\n'); // Wyczyszczenie bufora
+    }
+    else if (K < 8) {
+        printf("Pojemność zbyt mała! Ustawiam minimalną K=80.\n"); // <-- Tego brakuje
+        K = 80;
+    }
 
     // 1. Inicjalizacja IPC
     key_t key_shm = get_shm_key(FTOK_PATH, SHM_ID);

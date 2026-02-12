@@ -44,6 +44,17 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[i], "--testnum") == 0) testnum = atoi(argv[++i]);
     }
 
+    // --- WALIDACJA ARGUMENTÓW WEJŚCIOWYCH ---
+    if (K < 8) {
+        printf("[OSTRZEŻENIE] Podano zbyt małą pojemność (K=%d). Ustawiam minimum: 80.\n", K);
+        K = 80;
+    }
+    
+    if (testnum < 1 || testnum > 4) {
+         printf("[OSTRZEŻENIE] Nieznany numer testu (%d). Uruchamiam test domyślny nr 1.\n", testnum);
+         testnum = 1;
+    }
+
     srand(time(NULL));
 
     // --- CZYSZCZENIE RAPORTU ---
@@ -150,18 +161,36 @@ int main(int argc, char *argv[]) {
 
         // Obsługa wejścia użytkownika
         if (poll(&fds, 1, 500) > 0) {
-            if (scanf("%d", &cmd) == 1) {
+            // 1. Sprawdzamy, czy udało się wczytać liczbę
+            if (scanf("%d", &cmd) != 1) {
+                printf("\n[BŁĄD] Nieprawidłowe dane! Proszę wpisać cyfrę.\n");
+                
+                // --- CZYSZCZENIE BUFORA ---
+                int c;
+                while ((c = getchar()) != '\n' && c != EOF);
+                cmd = 0; 
+            } 
+            else {
+                // 2. Liczba wczytana poprawnie - obsługa logiki
                 if (cmd == 9) break;
                 
                 semop(semid, &lock, 1);
+                
                 if (cmd == 3) { 
                     hala->evacuation_mode = 1; 
                     log_event("KIEROWNIK", "Reczna ewakuacja"); 
+                    printf("\n[SUKCES] Uruchomiono ewakuację.\n");
                 }
-                if (cmd == 4) { 
+                else if (cmd == 4) { 
                     hala->is_match_started = 1; 
                     log_event("KIEROWNIK", "Reczny start meczu"); 
+                    printf("\n[SUKCES] Rozpoczęto mecz.\n");
                 }
+                else {
+                    // 3. Obsługa wpisania poprawnej liczby, ale złej komendy (Wymóg b)
+                    printf("\n[INFO] Nieznana komenda: %d (Dostępne opcje: 3, 4, 9)\n", cmd);
+                }
+                
                 semop(semid, &unlock, 1);
             }
         }
