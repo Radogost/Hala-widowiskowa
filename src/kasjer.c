@@ -1,3 +1,10 @@
+/**
+ * @file kasjer.c
+ * @brief Proces symulujący pracę kasy biletowej.
+ * * Realizuje logikę autoskalowania. Każdy proces kasjera cyklicznie sprawdza
+ * długość kolejki (`queue_to_cashiers`) i decyduje o swojej aktywności.
+ */
+
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
@@ -5,6 +12,15 @@
 #include <stdio.h>
 #include "common/shared.h"
 
+/**
+ * @brief Główna pętla procesu Kasjera.
+ * * Algorytm:
+ * 1. Sprawdź stan kolejki co 200ms.
+ * 2. Oblicz zapotrzebowanie: `2 + (Kolejka / (K/10))`.
+ * 3. Jeśli ID kasjera < zapotrzebowanie -> Otwórz okienko (Active).
+ * 4. Jeśli ID kasjera >= zapotrzebowanie -> Zamknij okienko (Sleep).
+ * * Proces kończy się po otrzymaniu sygnału SIGTERM od Kierownika.
+ */
 int main(int argc, char *argv[]) {
     int id = atoi(argv[1]); // ID kasjera 0-9
     
@@ -23,8 +39,6 @@ int main(int argc, char *argv[]) {
     int was_active = 0;
 
     while(1) {
-        // ZMIANA: Zamiast sleep(1), sprawdzamy częściej (co 0.2s)
-        // Dzięki temu, jak przyjedzie autobus, kasy otworzą się natychmiast.
         usleep(200000); 
         
         semop(semid, &lock, 1);
@@ -36,7 +50,6 @@ int main(int argc, char *argv[]) {
         if (threshold <= 0) threshold = 1;
         
         // Obliczamy ile kas jest potrzebnych
-        // Baza (2) + (Kolejka / Próg)
         int needed_cashiers = 2 + (hala->queue_to_cashiers / threshold);
 
         // Nie możemy przekroczyć maksymalnej liczby kasjerów (np. 10)
@@ -59,19 +72,17 @@ int main(int argc, char *argv[]) {
             sprintf(log_buf, "Kasa %d: ZAMYKA SIĘ (Spadek kolejki)", id+1);
             log_event("KASJER", log_buf);
         }
-        was_active = am_active; // Zapamiętaj stan na następną pętlę
+        was_active = am_active;
         // ---------------------------------------------------
 
         // Decyzja o spaniu
         if (!am_active) {
-            // Jestem niepotrzebny -> zamykam swoje okienko (zwalniam semafor)
             semop(semid, &unlock, 1);
             
-            sleep(1); // Śpię dłużej
+            sleep(1);
             continue;
         }
 
-        // Jestem potrzebny (udostępniam slot)
         semop(semid, &unlock, 1);
     }
     return 0;

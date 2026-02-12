@@ -1,3 +1,13 @@
+/**
+ * @file kierownik.c
+ * @brief Główny proces zarządczy (Orkiestrator).
+ * * Odpowiada za:
+ * - Inicjalizację zasobów IPC (SHM, SEM).
+ * - Uruchomienie procesów potomnych (Kasjerzy, Ochrona).
+ * - Generowanie ruchu kibiców (Generator).
+ * - Interakcję z użytkownikiem (Dashboard TUI) i obsługę sygnałów.
+ */
+
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
@@ -27,22 +37,24 @@ void handle_sigint(int sig) {
     exit(0);
 }
 
+/**
+ * @brief Generator procesów Kibiców (Symulacja tłumu).
+ * * Funkcja uruchamiana w oddzielnym procesie (`fork`). Tworzy nowe procesy `kibic`
+ * realizując dwa wzorce ruchu:
+ * 1. Ruch ciągły (pojedynczy kibice).
+ * 2. "Autobus" (nagła grupa kibiców) - służy do testowania skalowania kas (reguła K/10).
+ * * @param K Pojemność hali (wpływa na wielkość "autobusu").
+ */
 // Generator kibiców (Tryb Falowy)
 void run_fan_generator(int K) {
     if (fork() == 0) {
         srand(getpid());
-        // Generujemy 20% więcej ludzi niż miejsc, żeby zapewnić kolejkę
         int total_fans = K + (int)(K * 0.2); 
-        
-        // printf("[Generator] Start! %d kibiców rusza na mecz (Próg kas: %d).\n", total_fans, K/10);
 
         for (int i = 0; i < total_fans; i++) {
             
             // --- DUŻY AUTOBUS (Żeby przebić próg K/10) ---
-            // 5% szans na przyjazd dużej zorganizowanej grupy
-            if (rand() % 100 < 2) {
-                // Autobus musi być WIĘKSZY niż K/10, żeby otworzyć 3. kasę.
-                // Ustawiamy go losowo na 12% - 18% pojemności hali.
+            if (rand() % 100 < 2) { // 2% szans na "autobus"
                 int bus_size = (K * 0.12) + (rand() % (int)(K * 0.06));
                 
                 // Wpuszczamy ich serią (bez sleepa - nagły skok kolejki)
@@ -96,8 +108,15 @@ void draw_ui() {
     printf("Wybór: ");
 }
 
+/**
+ * @brief Główna pętla sterująca.
+ * * Inicjuje system, rysuje interfejs (Dashboard) i obsługuje polecenia administratora:
+ * - 1/2: Blokada/Odblokowanie sektora.
+ * - 3: Ewakuacja.
+ * - 4: Start meczu.
+ */
 int main(int argc, char *argv[]) {
-    // --- NOWE: CZYSZCZENIE RAPORTU ---
+    // --- CZYSZCZENIE RAPORTU ---
     FILE *f = fopen("raport_symulacji.txt", "w");
     if (f) {
         fprintf(f, "--- START NOWEJ SYMULACJI ---\n");
@@ -110,12 +129,12 @@ int main(int argc, char *argv[]) {
     int K = 0;
     printf("Podaj pojemność hali K: ");
     if (scanf("%d", &K) != 1) {
-        printf("Błędne dane! Ustawiam domyślną pojemność K=100.\n"); // <-- Tego brakuje
+        printf("Błędne dane! Ustawiam domyślną pojemność K=100.\n");
         K = 100;
         while(getchar() != '\n'); // Wyczyszczenie bufora
     }
     else if (K < 8) {
-        printf("Pojemność zbyt mała! Ustawiam minimalną K=80.\n"); // <-- Tego brakuje
+        printf("Pojemność zbyt mała! Ustawiam minimalną K=80.\n");
         K = 80;
     }
 
@@ -146,7 +165,16 @@ int main(int argc, char *argv[]) {
     key_t key_sem = get_sem_key(FTOK_PATH, SEM_ID);
     semid = semget(key_sem, 1, IPC_CREAT | 0600);
     check_error(semid, "semget");
+
     semctl(semid, 0, SETVAL, 1);
+
+    // #if defined(__linux__)
+    //     union semun arg;
+    //     arg.val = 1;
+    //     semctl(semid, 0, SETVAL, arg);
+    // #else
+    //     semctl(semid, 0, SETVAL, 1);
+    // #endif
 
     // 2. Uruchomienie procesów
     for(int i=0; i<MAX_CASHIERS; i++) {
@@ -175,15 +203,13 @@ int main(int argc, char *argv[]) {
         // LOCK -> Rysuj -> UNLOCK -> Czekaj na input
         semop(semid, &lock, 1);
         draw_ui();
-        fflush(stdout); // Ważne: wypchnij tekst na ekran przed odblokowaniem
+        fflush(stdout);
         semop(semid, &unlock, 1);
-        
-        // Czekaj na input przez 2000ms (2 sekundy)
-        // Jeśli wpiszesz coś w tym czasie, poll zwróci > 0
+
+        // Czekamy na input z timeoutem, żeby odświeżyć UI nawet bez interakcji 1sec
         int ret = poll(&fds, 1, 1000);
 
         if (ret > 0) {
-            // Użytkownik coś wpisał! Odczytaj to.
             if (scanf("%d", &cmd) == 1) {
                 
                 semop(semid, &lock, 1); // Blokada na czas zmiany danych

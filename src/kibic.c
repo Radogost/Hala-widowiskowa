@@ -1,3 +1,10 @@
+/**
+ * @file kibic.c
+ * @brief Proces symulujący zachowanie klienta (Kibica).
+ * * Reprezentuje pełną ścieżkę użytkownika w systemie: od kolejki, przez zakup,
+ * kontrolę bezpieczeństwa, aż po ewakuację.
+ */
+
 #include "common/shared.h"
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -10,6 +17,15 @@
 struct sembuf lock = {0, -1, 0};
 struct sembuf unlock = {0, 1, 0};
 
+/**
+ * @brief Cykl życia Kibica.
+ * * Etapy:
+ * 1. **Kolejka:** Oczekiwanie na zakup (zwiększenie licznika, czekanie na wolną kasę).
+ * 2. **Zakup:** Losowanie liczby biletów (1-2) i wybór sektora.
+ * 3. **Kontrola:** Próba wejścia przez bramkę (z obsługą mechanizmu "Agresji" przy zatorze).
+ * 4. **Mecz:** Oczekiwanie w stanie uśpienia na trybunach.
+ * 5. **Ewakuacja:** Opuszczenie hali po sygnale ewakuacji.
+ */
 int main() {
     srand(time(NULL) ^ getpid());
     
@@ -20,7 +36,7 @@ int main() {
     key_t key_sem = get_sem_key(FTOK_PATH, SEM_ID);
     int semid = semget(key_sem, 1, 0600);
 
-    // --- DEKLARACJE ZMIENNYCH (NA GÓRZE - ROZWIĄZUJE PROBLEM GOTO) ---
+    // --- DEKLARACJE ZMIENNYCH ---
     int is_vip = (rand() % 1000) < 3; 
     int my_ticket_sector = -1;
     int my_team = (rand() % 2) + 1; 

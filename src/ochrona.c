@@ -1,3 +1,10 @@
+/**
+ * @file ochrona.c
+ * @brief Proces obsługi technicznej sektora (Bramka).
+ * * Odpowiada za monitorowanie flagi blokady sektora (`sector_signal_status`)
+ * i logowanie zmian stanu (Otwarcie/Zamknięcie).
+ */
+
 #include "common/shared.h"
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -5,9 +12,15 @@
 #include <unistd.h>
 #include <stdio.h>
 
+/**
+ * @brief Pętla monitorująca stan sektora.
+ * * Proces sprawdza co 1 sekundę, czy Kierownik nie zmienił statusu sektora.
+ * W przypadku wykrycia zmiany (np. blokada z powodu zamieszek),
+ * loguje odpowiedni komunikat. Przy ewakuacji automatycznie otwiera przejście.
+ */
 int main(int argc, char *argv[]) {
-    int sector_id = atoi(argv[1]); // ID sektora 0-7
-    char log_buf[100]; // Bufor na tekst loga
+    int sector_id = atoi(argv[1]);
+    char log_buf[100];
     
     key_t key_shm = get_shm_key(FTOK_PATH, SHM_ID);
     int shmid = shmget(key_shm, sizeof(ArenaState), 0600);
@@ -40,7 +53,7 @@ int main(int argc, char *argv[]) {
         last_status = current_status;
         // -----------------------------
 
-        // Obsługa ewakuacji (Priorytet najwyższy - otwiera wszystko)
+        // Obsługa ewakuacji
         if (hala->evacuation_mode) {
             hala->sector_signal_status[sector_id] = 0; 
         }

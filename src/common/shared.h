@@ -1,3 +1,12 @@
+/**
+ * @file shared.h
+ * @brief Definicje stałych, struktur i funkcji pomocniczych dla systemu stadionowego.
+ *
+ * Plik zawiera definicję struktury ArenaState mapowanej w pamięci dzielonej (SHM),
+ * klucze IPC oraz funkcje do logowania zdarzeń i obsługi błędów.
+ * Jest dołączany przez wszystkie procesy w systemie.
+ */
+
 #ifndef SHARED_H
 #define SHARED_H
 
@@ -28,37 +37,55 @@
 #define CLR_RESET   "\x1b[0m"
 #define CLR_BOLD    "\x1b[1m"
 
+// #ifdef __linux__
+// union semun {
+//     int val;
+//     struct semid_ds *buf;
+//     unsigned short *array;
+// };
+// #endif
+
+/**
+ * @struct SecurityPost
+ * @brief Reprezentuje pojedyncze stanowisko kontroli bezpieczeństwa.
+ */
 // Struktura pojedynczego stanowiska kontroli
 typedef struct {
-    int occupied_count; // Ile osób jest kontrolowanych (max 3)
-    int team_id;        // 0=Brak, 1=DrużynaA, 2=DrużynaB (wymóg: ta sama drużyna)
+    int occupied_count; /**< Liczba osób aktualnie kontrolowanych (max 3). */
+    int team_id;        /**< ID drużyny aktualnie obsługiwanej (zapobiega mieszaniu kibiców). */
 } SecurityPost;
 
+/**
+ * @struct ArenaState
+ * @brief Główny stan systemu przechowywany w Pamięci Dzielonej (Shared Memory).
+ *
+ * Struktura dostępna dla wszystkich procesów. Zawiera liczniki, flagi stanu
+ * oraz tablice reprezentujące sektory i kasy. Dostęp do pól modyfikowalnych
+ * musi być synchronizowany semaforem.
+ */
 // Struktura stanu całej hali (Pamięć dzielona)
 typedef struct {
-    int K; // Pojemność całkowita
-    int sector_capacity; // K/8
-    int is_match_started; // Czy wybiła godzina Tp
-    int evacuation_mode;  // Sygnał 3
+    int K;                          /**< Całkowita pojemność hali. */
+    int sector_capacity;            /**< Pojemność pojedynczego sektora (K/8). */
+    int is_match_started;           /**< Flaga Tp: 1 = Mecz trwa, 0 = Oczekiwanie. */
+    int evacuation_mode;            /**< Sygnał ewakuacji: 1 = Ewakuacja, 0 = Normalna praca. */
 
     // KASY
-    int queue_to_cashiers; // Liczba osób w kolejce do kas
-    int active_cashiers_count; // Liczba aktualnie czynnych kas (wyliczana)
-    int tickets_sold[MAX_SECTORS]; // Sprzedane bilety na sektory
+    int queue_to_cashiers;          /**< Liczba osób w głównej kolejce (zmienna atomowa). */
+    int active_cashiers_count;      /**< Liczba aktywnych kasjerów (skalowanie dynamiczne). */
+    int tickets_sold[MAX_SECTORS];  /**< Liczba biletów sprzedanych na dany sektor. */
     
     // SEKTORY I BRAMKI
-    // sector_status: 0=Otwarte, 1=Wstrzymane (Sygnał 1), 2=Zablokowane całkowicie
-    int sector_signal_status[MAX_SECTORS]; 
-    int people_in_sector[MAX_SECTORS];
-    int vip_count;
+    int sector_signal_status[MAX_SECTORS]; /**< Status bramki: 0=Otwarta, 1=Zablokowana przez Kierownika. */
+    int people_in_sector[MAX_SECTORS];     /**< Fizyczna liczba osób na sektorze. */
+    int vip_count;                         /**< Licznik wejść VIP. */
 
     // KONTROLA BEZPIECZEŃSTWA
-    // 8 sektorów, każdy ma 2 stanowiska kontrolne
-    SecurityPost security[MAX_SECTORS][SECURITY_PER_GATE];
+    SecurityPost security[MAX_SECTORS][SECURITY_PER_GATE]; /**< Stanowiska ochrony. */
 
 } ArenaState;
 
-// Funkcje pomocnicze (takie same jak w Twoim projekcie)
+// Funkcje pomocnicze
 static inline key_t get_shm_key(const char *path, int id) {
     key_t key = ftok(path, id);
     if (key == -1) { perror("ftok shm"); exit(1); }
@@ -78,13 +105,18 @@ static inline void check_error(int result, const char *msg) {
     }
 }
 
-// Prosty logger do pliku (wymóg zadania)
+/**
+ * @brief Rejestruje zdarzenie w pliku raportu z dokładnym znacznikiem czasu.
+ * * @param who Nazwa modułu zgłaszającego (np. "KIEROWNIK", "KASJER").
+ * @param msg Treść komunikatu.
+ */
+// Prosty logger do pliku
 static inline void log_event(const char *who, const char *msg) {
     FILE *f = fopen("raport_symulacji.txt", "a");
     if (f) {
         time_t now = time(NULL);
         char *t_str = ctime(&now);
-        t_str[24] = '\0'; // usunięcie \n
+        t_str[24] = '\0';
         fprintf(f, "[%s] [%s] %s\n", t_str, who, msg);
         fclose(f);
     }

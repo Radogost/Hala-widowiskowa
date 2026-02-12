@@ -1,3 +1,10 @@
+/**
+ * @file kierowniktest.c
+ * @brief Moduł do automatycznych testów wydajnościowych i scenariuszowych.
+ * * Wersja Kierownika przystosowana do pracy bezinteraktywnej (zasilana przez skrypt testy.sh).
+ * Zawiera zmodyfikowany generator i logikę automatycznego wyzwalania zdarzeń.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,8 +18,6 @@
 #include <string.h>
 #include <poll.h>
 #include <errno.h>
-
-// Wskazujemy poprawną ścieżkę do shared.h
 #include "common/shared.h"
 
 // --- ZMIENNE GLOBALNE ---
@@ -32,6 +37,12 @@ void handle_sigint(int sig);
 void run_test_generator(int K, int test_mode);
 void print_test_dashboard(int test_mode, double elapsed);
 
+/**
+ * @brief Główna pętla testowa.
+ * * Uruchamia symulację z zadanymi parametrami (N, testnum).
+ * Obsługuje scenariusze automatyczne (np. Test 4: Start meczu po 15s, Ewakuacja po 30s)
+ * oraz weryfikuje poprawność danych wejściowych.
+ */
 int main(int argc, char *argv[]) {
     signal(SIGINT, handle_sigint);
 
@@ -75,6 +86,14 @@ int main(int argc, char *argv[]) {
     check_error(semid, "semget");
     
     semctl(semid, 0, SETVAL, 1);
+
+    // #if defined(__linux__)
+    //     union semun arg;
+    //     arg.val = 1;
+    //     semctl(semid, 0, SETVAL, arg);
+    // #else
+    //     semctl(semid, 0, SETVAL, 1);
+    // #endif
 
     hala = (ArenaState*)shmat(shmid, NULL, 0);
     if (hala == (void*)-1) { perror("shmat"); exit(1); }
@@ -161,7 +180,6 @@ int main(int argc, char *argv[]) {
 
         // Obsługa wejścia użytkownika
         if (poll(&fds, 1, 500) > 0) {
-            // 1. Sprawdzamy, czy udało się wczytać liczbę
             if (scanf("%d", &cmd) != 1) {
                 printf("\n[BŁĄD] Nieprawidłowe dane! Proszę wpisać cyfrę.\n");
                 
@@ -171,7 +189,6 @@ int main(int argc, char *argv[]) {
                 cmd = 0; 
             } 
             else {
-                // 2. Liczba wczytana poprawnie - obsługa logiki
                 if (cmd == 9) break;
                 
                 semop(semid, &lock, 1);
@@ -187,7 +204,6 @@ int main(int argc, char *argv[]) {
                     printf("\n[SUKCES] Rozpoczęto mecz.\n");
                 }
                 else {
-                    // 3. Obsługa wpisania poprawnej liczby, ale złej komendy (Wymóg b)
                     printf("\n[INFO] Nieznana komenda: %d (Dostępne opcje: 3, 4, 9)\n", cmd);
                 }
                 
