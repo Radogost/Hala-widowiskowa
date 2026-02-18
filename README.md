@@ -77,7 +77,7 @@ Projekt zrealizowano w architekturze wieloprocesowej:
 3.  **`ochrona`:** Procesy pilnujące limitów wejść na sektory i reagujące na sygnały blokady.
 4.  **`kibic`:** Procesy symulujące zachowanie ludzi (zakup biletu, kontrola, oglądanie, ewakuacja).
 
-### 🧪 Scenariusze Testowe (`tests.sh`)
+### 🧪 Scenariusze Testowe (`testy.sh`)
 
 Przygotowano skrypt automatyzujący weryfikację wymagań:
 1.  **Test Podstawowy:** Spokojny ruch, stabilność systemu.
